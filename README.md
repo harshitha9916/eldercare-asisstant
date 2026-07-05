@@ -140,7 +140,7 @@ graph TD
    git add .
    git commit -m "Initial commit: eldercare-assistant ADK agent"
    git branch -M main
-   git remote add origin https://github.com/<your-username>/eldercare-assistant.git
+   git remote add origin https://github.com/harshitha9916/elderly-care-assistant.git
    git push -u origin main
    ```
 
