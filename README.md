@@ -129,7 +129,7 @@ graph TD
 ## Push to GitHub
 
 1. Create a new repo at https://github.com/new
-   - Name: eldercare-assistant
+   - Name: elderly-care-assistant
    - Visibility: Public or Private
    - Do NOT initialize with README (you already have one)
 
