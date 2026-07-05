@@ -1,0 +1,45 @@
+[0:00 — HOOK]
+Caring for elderly relatives is a high-stakes responsibility where any mistake in medication or appointments can lead to serious consequences. I built ElderCare Assistant to give families and caregivers a secure, reliable tool to manage daily care routines without making errors.
+
+[0:20 — WHAT IT IS]
+ElderCare Assistant is a personalized caregiver companion built on the Google Agent Development Kit. It coordinates daily routines, manages complex drug regimens, and logs doctor visits under the Concierge Agents track.
+
+(pause)
+
+[0:40 — SHOW THE BANNER]
+(show assets/cover_page_banner.png)
+As you can see on the banner, it is designed to be an automated, secure, and intelligent care assistant that stands between the caregiver and the daily complexity of elder care.
+
+(pause)
+
+[1:00 — ARCHITECTURE]
+(show assets/architecture_diagram.png)
+Let's walk through how it works under the hood. 
+Every user message starts at the Security Checkpoint node, which scrubs PII and checks for prompt injections.
+If the query is clean, it is forwarded to our main Orchestrator Agent.
+The Orchestrator evaluates the query and uses AgentTools to delegate the task to one of our three specialized sub-agents: routine_agent, medication_agent, or wellness_agent.
+Each specialized agent is connected to a local MCP Server which executes domain-specific database tools.
+Before any changes are saved, the workflow flows into the HITL approval node. 
+If a medication change or doctor appointment is requested, the system pauses and demands explicit caregiver confirmation before continuing.
+Finally, the result is outputted by the final output node.
+
+(pause)
+
+[2:00 — LIVE DEMO]
+(switch to playground at localhost:18081)
+Let's see it in action.
+If I type: "Please add a new medication: Vitamin D3, 2000 IU, once daily in the morning."
+The request passes the security check, is routed by the Orchestrator to the medication coordinator, which logs the new schedule.
+Because this modifies a drug regimen, the system triggers the Caregiver Approval prompt: "A caregiver/family member approval is required to proceed with this request. Do you approve? (yes/no)".
+Once I type "yes", the medication is added to our database records.
+If I schedule an appointment, like: "Schedule a doctor visit with Dr. Adams next Monday at 2:00 PM", it delegates to the Routine specialist and prompts for approval similarly.
+Finally, if I log simple symptoms, like: "Log that I slept 7 hours and had low pain today", it delegates to the wellness agent and logs it immediately without requiring approval, keeping simple workflows fast.
+
+(pause)
+
+[3:00 — SECURITY & MCP]
+Our Security Checkpoint keeps medical data safe by automatically scrubbing phone numbers, emails, and SSNs, while writing structured JSON audit logs for compliance.
+On the backend, our MCP Server exposes 5 dedicated tools to handle schedules, wellness entries, and doctor databases locally and securely.
+
+[3:30 — IMPACT / CLOSE]
+By automating daily coordination while keeping a human caregiver firmly in control, ElderCare Assistant minimizes errors and brings peace of mind to families. Thank you.
