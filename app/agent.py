@@ -42,17 +42,18 @@ wellness_mcp_toolset = McpToolset(
     tool_filter=["log_wellness_entry"]
 )
 
-# Specialized Sub-agents
+# Specialized Sub-agents (acting as backend tool execution agents)
 routine_agent = LlmAgent(
     name="routine_agent",
     model=Gemini(
         model=config.model,
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
-    instruction="""You are the Routine Specialist. You coordinate the elder's daily routines, family/caregiver visits, and schedules. 
-You have access to MCP tools to retrieve daily routines, get doctor visits, and schedule doctor visits.
-When asked to schedule a doctor visit or general visit, use the appropriate tools to do so. 
-State what you have scheduled in your response. If an appointment is scheduled, clearly state: [APPOINTMENT_SCHEDULED].""",
+    instruction="""You are the Routine Specialist. You coordinate the elder's daily routines, caregiver/family visits, and doctor schedules.
+You have access to MCP tools to retrieve routines, get doctor visits, and schedule doctor visits.
+Perform the requested action using your tools and return a concise, factual summary of what was done or scheduled to the orchestrator.
+Do not write conversational chatter.
+If you schedule a doctor/visit, include the text: [APPOINTMENT_SCHEDULED] in your output.""",
     tools=[routine_mcp_toolset],
 )
 
@@ -62,10 +63,11 @@ medication_agent = LlmAgent(
         model=config.model,
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
-    instruction="""You are the Medication Coordinator. You manage the elder's medication schedules, dosages, alerts, and compliance.
-You have access to MCP tools to update medication schedules. Use them whenever you need to add or update medication.
-If asked to add or change medication, explain the change clearly and note that a caregiver approval is required.
-Always highlight side effects or drug interaction warnings if any. If a medication is added or modified, clearly state: [MEDICATION_CHANGED].""",
+    instruction="""You are the Medication Coordinator. You manage the elder's medication schedules, dosages, and compliance.
+You have access to MCP tools to update medication schedules.
+Perform the requested action using your tools and return a concise, factual summary of what was done to the orchestrator.
+Do not write conversational chatter.
+If you add or modify a medication, include the text: [MEDICATION_CHANGED] in your output.""",
     tools=[medication_mcp_toolset],
 )
 
@@ -75,9 +77,10 @@ wellness_agent = LlmAgent(
         model=config.model,
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
-    instruction="""You are the Wellness Companion. You log the elder's physical/mental well-being, mood, physical symptoms, pain level, sleep quality, and general state.
-You have access to MCP tools to log wellness entries. Use them whenever wellness logs or physical states need to be saved.
-Help provide gentle advice or log the symptoms for the doctor's review. Highlight any significant health warnings.""",
+    instruction="""You are the Wellness Companion. You log the elder's physical/mental well-being (mood, pain level, sleep, symptoms).
+You have access to MCP tools to log wellness entries.
+Perform the requested action using your tools and return a concise, factual summary of what was logged (including what information is missing or what details were recorded) to the orchestrator.
+Do not write conversational chatter.""",
     tools=[wellness_mcp_toolset],
 )
 
@@ -89,12 +92,12 @@ orchestrator_agent = LlmAgent(
     ),
     instruction="""You are the ElderCare Orchestrator. 
 Your goal is to coordinate elderly daily routines, track medication schedules, log well-being, and manage doctor/visit logs.
-For any query, identify which of the specialized sub-agents is best suited to handle the task, and delegate to them:
-- Use routine_agent to manage daily schedules, routines, caregiver/family visits, and doctor/medical appointments.
-- Use medication_agent to handle medication schedules, reminders, dosages, and compliance.
-- Use wellness_agent to log physical/mental health state, mood, symptoms, and wellness.
+You are the primary conversational agent. You talk directly to the user.
+To perform actions, you delegate tasks to specialized sub-agents using their tools.
+When you call a sub-agent tool, you MUST include the full context of the request, including any relevant previous details from the conversation history (such as sleep hours or symptoms already provided), so the sub-agent has complete information.
+Do not let sub-agents hold conversations. You are responsible for asking follow-up questions (e.g. asking for missing wellness details like mood or pain level) and delivering the final response to the user based on the sub-agent's tool execution result.
 
-If the request involves modifying medications (like adding a new drug, changing a dosage) or scheduling a new doctor/medical appointment, you must explicitly notify the user that caregiver approval is required. In your response, include the text: [APPROVAL_REQUIRED] followed by the details of the request.
+If the request involves modifying medications or scheduling doctor visits, you must explicitly notify the user that caregiver approval is required by including the text: [APPROVAL_REQUIRED] followed by the details.
 """,
     tools=[
         AgentTool(routine_agent),

@@ -129,7 +129,7 @@ graph TD
 ## Push to GitHub
 
 1. Create a new repo at https://github.com/new
-   - Name: elderly-care-assistant
+   - Name: elderly-care-asisstant
    - Visibility: Public or Private
    - Do NOT initialize with README (you already have one)
 
@@ -140,7 +140,7 @@ graph TD
    git add .
    git commit -m "Initial commit: eldercare-assistant ADK agent"
    git branch -M main
-   git remote add origin https://github.com/harshitha9916/elderly-care-assistant.git
+   git remote add origin https://github.com/harshitha9916/elderly-care-asisstant.git
    git push -u origin main
    ```
 
