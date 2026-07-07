@@ -1,14 +1,23 @@
 # ElderCare Assistant 👵👴
+### *The AI Care Coordinator That Keeps Humans in Control*
 
-> An intelligent, secure, multi-agent AI system that coordinates elderly daily routines, medication compliance, doctor visit scheduling, and wellness monitoring — with caregiver human-in-the-loop approval for all critical actions.
+> **Not a chatbot. A care system.**
+> Built on Google ADK 2.0 — ElderCare Assistant acts as an intelligent, secure concierge that manages medication schedules, daily routines, doctor appointments, and wellness tracking for aging loved ones. Every critical action requires explicit caregiver approval. The AI cannot approve itself. Ever.
 
 ![Cover Page Banner](assets/cover_page_banner.png)
+
+[![19 Tests Passing](https://img.shields.io/badge/tests-19%20passing-brightgreen)](#testing)
+[![ADK 2.0](https://img.shields.io/badge/Google%20ADK-2.0-blue)](#architecture)
+[![FastMCP](https://img.shields.io/badge/MCP-FastMCP%20stdio-purple)](#mcp-server-design)
+[![Security First](https://img.shields.io/badge/security-pre--LLM%20gate-red)](#security-design)
+[![Cloud Run Ready](https://img.shields.io/badge/deploy-Cloud%20Run%20Ready-orange)](#deployment)
 
 ---
 
 ## Table of Contents
 
-- [Problem Statement](#problem-statement)
+- [The Problem — And Why It's Life or Death](#the-problem)
+- [What Makes This Different](#what-makes-this-different)
 - [Solution & Key Concepts](#solution--key-concepts)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
@@ -24,31 +33,50 @@
 
 ---
 
-## Problem Statement
+## The Problem
 
-Caring for elderly relatives is a complex, high-stakes responsibility. Caregivers must simultaneously manage:
+Every day, 53 million unpaid American caregivers face the same impossible math:
+- One parent. Multiple prescriptions. Different dosages. Different timing.
+- Three doctors. Zero shared calendars.
+- Wellness decline that starts as "seemed a little off today" and ends as a hospitalization.
 
-- **Daily routines** — wake-up times, meals, exercise, recreation
-- **Medication schedules** — correct drug, dosage, and timing for multiple prescriptions
-- **Wellness tracking** — mood, pain levels, sleep, symptoms
-- **Medical appointments** — coordinating multiple doctors and specialists
+**The WHO reports 1.3 million people are harmed by medication errors every year.** Not from neglect — from coordination failure. Caregivers burn out not because they don't care, but because coordinating complex care is a full-time job that doesn't pause.
 
-Miscommunication or a single missed medication dose can lead to serious health consequences. There is a critical need for an **automated, intelligent assistant** that coordinates these tasks while keeping a human caregiver firmly in the loop to review and approve all critical medical changes.
+A sticky note doesn't solve this. A reminder app doesn't solve this. **An intelligent agent system that understands natural language, routes tasks to the right specialist, guards against unauthorized actions, and keeps a human firmly in control of every critical decision — that's what solves this.**
+
+---
+
+## What Makes This Different
+
+Most AI assistants for healthcare make a dangerous tradeoff: they trade safety for convenience. They put guards in system prompts. They let the LLM decide when to ask for approval. They give every agent access to every tool.
+
+ElderCare Assistant is built on a different principle: **safety is not a prompt, it's architecture.**
+
+| Feature | Typical AI App | ElderCare Assistant |
+|---|---|---|
+| Security | LLM system prompt ("be careful") | **Pure Python gate — runs before any LLM** |
+| PII protection | Maybe | **Regex scrub — SSN, phone, email — before model sees text** |
+| Emergency response | LLM decides | **Instant keyword intercept — 0 LLM calls, sub-millisecond** |
+| Human approval | LLM asks "should I proceed?" | **OS-level workflow pause — AI literally cannot self-resume** |
+| Tool access | All agents see all tools | **Per-agent tool_filter — medication agent can't touch appointments** |
+| Audit trail | Logs maybe | **Structured JSON every request → Cloud Logging (HIPAA-grade)** |
 
 ---
 
 ## Solution & Key Concepts
 
-The ElderCare Assistant is a **graph-based multi-agent workflow** built with Google ADK 2.0. It applies all major concepts covered in the course:
+The ElderCare Assistant is a **graph-based multi-agent workflow** built with Google ADK 2.0. It demonstrates all major concepts covered in the course:
 
 | Key Concept | Where Demonstrated |
 |---|---|
 | **Agent / Multi-Agent System (ADK)** | `app/agent.py` — Orchestrator + 3 specialized `LlmAgent` sub-agents wired via `AgentTool` |
 | **MCP Server** | `app/mcp_server.py` — FastMCP stdio server exposing 5 eldercare tools, consumed via `McpToolset` |
-| **Antigravity (AI-assisted development)** | Project scaffolded, built, and iterated using Antigravity (Google DeepMind's agentic coding assistant) |
-| **Security Features** | `app/agent.py` — PII redaction, prompt injection detection, emergency keyword routing, structured JSON audit log |
+| **Antigravity (AI-assisted development)** | Project scaffolded, built, debugged, and documented using Antigravity (Google DeepMind's agentic coding assistant) |
+| **Security Features** | `app/agent.py` — PII redaction, prompt injection detection, emergency keyword routing, structured JSON audit log — all *before* any LLM call |
 | **Deployability** | `Dockerfile`, `app/fast_api_app.py`, `agents-cli-manifest.yaml` — Docker + Cloud Run / Agent Runtime ready |
 | **Agent Skills (Agents CLI)** | `agents-cli-manifest.yaml` — Project scaffolded with `agents-cli scaffold create` and structured for `agents-cli deploy` |
+
+
 
 ---
 
