@@ -1,4 +1,4 @@
-﻿# ruff: noqa
+# ruff: noqa
 """
 ElderCare Assistant â€” Core Workflow Agent (app/agent.py)
 
