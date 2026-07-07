@@ -1,45 +1,110 @@
-[0:00 — HOOK]
-Caring for our aging parents and grandparents is a high-stakes, stressful responsibility where a single medication mix-up or missed doctor visit can have life-threatening consequences. I created ElderCare Assistant to solve this exact problem—giving families a highly secure, reliable shield that guarantees senior safety and coordinates care routines flawlessly.
+==========================================
+ ELDERCARE ASSISTANT — VIDEO DEMO SCRIPT
+ Google ADK Capstone | Concierge Agents Track
+ Target length: 4:30–5:00 minutes
+==========================================
+
+[0:00 — HOOK — 20 seconds]
+(Show a quiet family dinner table. Then cut to text on screen: "1.3 million medication errors per year. 53 million unpaid caregivers. One missed dose can mean a hospitalization.")
+
+NARRATION:
+"Caring for an aging parent is one of the most important — and most stressful — things a person can do. Medication schedules, doctor appointments, wellness logs, daily routines. One missed detail, one miscommunication, can mean a visit to the emergency room.
+
+I built ElderCare Assistant to fix that."
+
+---
+
+[0:25 — WHAT IT IS — 25 seconds]
+(Show cover_page_banner.png fullscreen)
+
+NARRATION:
+"ElderCare Assistant is a multi-agent AI system built with the Google Agent Development Kit. It acts as an intelligent concierge coordinator — managing medication schedules, daily routines, wellness tracking, and doctor visits using natural language.
+
+But here is the critical part: it never acts alone on medical decisions. Every critical change requires explicit caregiver approval before it is committed."
+
+---
+
+[0:50 — ARCHITECTURE — 60 seconds]
+(Show architecture_diagram.png. Animate or highlight each section as you describe it.)
+
+NARRATION:
+"Let me show you how it's built.
+
+Every message first hits a Security Checkpoint — implemented in pure Python, not an LLM. This means it is completely deterministic. It scrubs personal information like phone numbers and Social Security numbers, detects prompt injection attacks, and routes medical emergencies directly to a 911 alert — in milliseconds, with no LLM call.
+
+Clean messages flow to the Orchestrator Agent — the conversational core that talks to the user and decides which specialist to call.
+
+Three specialist sub-agents handle the work: the Routine Agent for daily schedules and doctor visits, the Medication Agent for prescriptions, and the Wellness Agent for mood, pain, and sleep logging.
+
+Each specialist talks to a local MCP server — Model Context Protocol — which exposes five dedicated tools. Critically, each agent only gets access to the tools it needs. The medication agent cannot schedule doctor visits. The wellness agent cannot touch medications. This principle of least privilege is enforced at the toolset level.
+
+Before any critical change is committed, the workflow pauses at the Human-in-the-Loop approval node. The caregiver must explicitly type 'yes' to proceed. There is no way for the AI to approve its own actions."
+
+---
+
+[1:55 — LIVE DEMO — 90 seconds]
+(Screen recording of ADK playground at localhost:18081. Use large font, clean browser window.)
+
+NARRATION:
+"Let me show this working in real time.
+
+First — adding a medication. I type: 'Please add a new medication: Vitamin D3, 2000 IU, once daily in the morning.'
+
+Watch what happens. The security checkpoint processes the text instantly. The orchestrator recognizes this as a medication request and delegates to the Medication Agent, which calls the MCP update_medication_schedule tool.
+
+And then — the system stops. It shows: 'A caregiver approval is required. Do you approve? yes or no?'
+
+This is the Human-in-the-Loop interrupt. The entire workflow is paused at the OS level. No LLM can bypass this. I type 'yes' — and now the medication is committed.
+
+Now let me show scheduling a doctor visit. 'Schedule a doctor visit with Dr. Adams next Monday at 2 PM.' — Same flow. Routed to the Routine Agent, calls add_doctor_visit, triggers the HITL pause, caregiver approves.
+
+Now contrast that with a wellness log: 'Log that I slept 7 hours and had low pain today.' — This routes to the Wellness Agent, runs instantly, no interruption needed. Fast and frictionless for routine updates.
+
+---
+
+[3:25 — SECURITY DEMO — 35 seconds]
+(Stay on playground, type the PII and emergency examples)
+
+NARRATION:
+"Now the security features. I send a message containing a phone number: 'My father's number is 555-867-5309 — log that he slept 8 hours.' Watch the audit log — it shows pii_scrubbed: true. The phone number never reached the LLM.
+
+And if I type a medical emergency: 'My father is having chest pain!' — No LLM is called at all. The system immediately responds with the 911 alert. This is a hard-coded safety net that fires in milliseconds."
+
+---
+
+[4:00 — TECH STACK & BUILD — 30 seconds]
+(Show GitHub repo briefly)
+
+NARRATION:
+"The full system is built on Google ADK 2.0, FastMCP, FastAPI, and the Agents CLI. The project was scaffolded end-to-end using Antigravity — Google DeepMind's agentic coding assistant — which helped design the architecture, implement the workflow graph, debug MCP stream issues, and write the documentation.
+
+It's containerized with Docker and pre-configured for deployment to Google Cloud Run via the agents-cli deploy command. The GitHub repository includes full setup instructions — clone, add your API key, and run make playground."
+
+---
+
+[4:30 — CLOSE — 25 seconds]
+(Return to cover page or a calm final slide with project name)
+
+NARRATION:
+"By 2050, the global population over 65 will double. Caregiver burnout is already at crisis levels. ElderCare Assistant demonstrates how AI agents can shoulder the coordination burden — while keeping humans firmly in control of the decisions that matter most.
+
+This is what Concierge Agents look like in practice: not a chatbot, but a trusted care coordinator that works for your family, every day.
+
+Thank you."
+
+==========================================
+ RECORDING TIPS
+==========================================
+- Record at 1080p minimum
+- Use a browser zoom of 110-125% for readability
+- Run `make playground` BEFORE starting recording
+- Pre-type test queries to avoid live typos
+- Keep terminal visible in a split view during security demo
+- Total target: under 5 minutes
+- Upload to YouTube as Unlisted or Public, copy URL for Kaggle submission
+==========================================
+
 
 [0:20 — WHAT IT IS]
 ElderCare Assistant acts as an intelligent, personalized concierge companion. Built with the Google Agent Development Kit, it actively manages medication schedules, organizes routines, and handles medical visit logs under the Concierge Agents track.
 
-(pause)
-
-[0:40 — SHOW THE BANNER]
-(show assets/cover_page_banner.png)
-As you see here, this system stands as a critical checkpoint between a busy caregiver and the daily, complex demands of elder care, turning chaos into structured safety.
-
-(pause)
-
-[1:00 — ARCHITECTURE]
-(show assets/architecture_diagram.png)
-Let's look at how the architecture actively enforces security and workflow execution.
-Every user input passes through our Security Checkpoint first, where it immediately scrubs sensitive PII and blocks prompt injections.
-For clean requests, the checkpoint routes control to our central Orchestrator Agent.
-This orchestrator immediately analyzes the request and delegates tasks to our specialized sub-agents: the Routine Specialist, the Medication Coordinator, or the Wellness Companion.
-Each specialist queries and updates data through our local Model Context Protocol server, which exposes dedicated database tools.
-Crucially, before saving any critical changes, the graph routes execution through the Human-in-the-Loop approval node.
-If the request alters medication or schedules appointments, the system halts and demands caregiver validation before proceeding.
-Once verified, the final output node delivers the confirmation.
-
-(pause)
-
-[2:00 — LIVE DEMO]
-(switch to playground at localhost:18081)
-Let's demonstrate how this works in real-time.
-When I type: "Please add a new medication: Vitamin D3, 2000 IU, once daily in the morning."
-The checkpoint processes the text, the orchestrator delegates it to the Medication Coordinator, and the coordinator calls the MCP update tool.
-Because this changes a drug regimen, the system actively halts and prompts me: "A caregiver/family member approval is required to proceed with this request. Do you approve? (yes/no)".
-Once I type "yes", the system commits the change to our secure database.
-If I schedule an appointment, like: "Schedule a doctor visit with Dr. Adams next Monday at 2:00 PM", the Routine Specialist handles it and triggers the same caregiver verification flow.
-However, if I type: "Log that I slept 7 hours and had low pain today", the Wellness Companion logs the metrics immediately without pausing, keeping standard status logging fast and frictionless.
-
-(pause)
-
-[3:00 — SECURITY & MCP]
-To protect patient privacy, our Security Checkpoint redacts emails, phone numbers, and SSNs on the fly, while writing structured JSON audit logs for compliance.
-Our MCP Server executes 5 critical tools locally, keeping sensitive schedules, wellness data, and medical databases secure and private on your machine.
-
-[3:30 — IMPACT / CLOSE]
-By actively managing daily care routines and placing a caregiver at the center of every critical decision, ElderCare Assistant prevents mistakes and saves lives. It gives families peace of mind when they need it most. Thank you.

@@ -1,7 +1,168 @@
 # Project Submission Write-up: ElderCare Assistant 👵👴
 
+**Track:** Concierge Agents
+**GitHub:** https://github.com/harshitha9916/elderly-care-asisstant
+
+---
+
 ## Problem Statement
-Caring for elderly relatives is a complex and high-stakes responsibility. Caregivers must balance daily routines, strictly coordinate critical medication schedules, log wellness metrics (symptoms, mood, physical states), and schedule multiple medical appointments. Miscommunication or medication errors can lead to serious health issues. There is a critical need for an automated, secure assistant that coordinates these tasks while keeping a human caregiver firmly in the loop to review and approve critical changes.
+
+Over 53 million Americans serve as unpaid caregivers for elderly relatives. They simultaneously juggle medication schedules, coordinate daily routines, log wellness changes, and schedule appointments — all while managing their own lives. The consequences of failure are severe: missed medications, miscommunicated appointments, and unrecognized wellness decline can cascade into hospitalizations. According to the WHO, medication errors alone harm 1.3 million people annually in the United States.
+
+The core issue is not lack of care — it is the **lack of an intelligent coordination layer** that tracks these moving pieces, raises the right alerts, and ensures a qualified human makes the final call on critical changes.
+
+---
+
+## Why Agents?
+
+A traditional app forces caregivers to navigate menus and fill forms. An agent-based solution is fundamentally different:
+
+- **Natural language understanding** — say _"Add Vitamin D3, 2000 IU, once daily"_ instead of filling a form
+- **Intelligent routing** — the orchestrator knows which specialist to engage for each request
+- **Automatic safety enforcement** — dangerous inputs are intercepted; irreversible changes require explicit approval
+- **Scalable complexity** — multiple specialist agents handle simultaneous concerns while the orchestrator synthesizes a unified response
+
+---
+
+## Solution Architecture
+
+ElderCare Assistant is a graph-based multi-agent workflow built on **Google ADK 2.0**. Every user message flows through a deterministic security gate, then a specialist delegation layer, and finally a caregiver approval checkpoint.
+
+```mermaid
+graph TD
+    START([User Query]) --> SecCheck{Security Checkpoint}
+    SecCheck -- Unsafe / Emergency --> SecEvent[Security Event Node]
+    SecCheck -- Clean / Safe --> Orch[Orchestrator Agent]
+    Orch --> Tool1[AgentTool: Routine Agent]
+    Orch --> Tool2[AgentTool: Medication Agent]
+    Orch --> Tool3[AgentTool: Wellness Agent]
+    Tool1 -.-> MCP[MCP Server stdio]
+    Tool2 -.-> MCP
+    Tool3 -.-> MCP
+    MCP -.-> tools["get_daily_routines, update_medication_schedule, log_wellness_entry, get_doctor_visits, add_doctor_visit"]
+    Tool1 --> HITL{HITL Approval Node}
+    Tool2 --> HITL
+    Tool3 --> HITL
+    HITL -- Approved / Not Needed --> Output[Final Output Node]
+    HITL -- Denied --> Output
+    HITL -- Interrupts --> Caregiver[Caregiver Response]
+    Caregiver --> HITL
+    Output --> END([Response to User])
+```
+
+### Key Design Decisions
+
+**Security as a non-LLM node** — The security checkpoint is pure Python, making behavior 100% deterministic and impossible to bypass with adversarial prompting.
+
+**Specialist agents, not one giant agent** — Each sub-agent has a narrow, single-responsibility instruction and accesses only the tools it needs (principle of least privilege).
+
+**MCP as the persistence layer** — All data operations are isolated behind a FastMCP stdio server. The agent logic can be upgraded without touching the data layer.
+
+**HITL as a workflow interrupt** — ADK's `RequestInput` + `@node(rerun_on_resume=True)` pauses the workflow at the OS level. No LLM can "approve" a medication change on the caregiver's behalf.
+
+---
+
+## Course Concepts Applied
+
+| Concept | Implementation |
+|---|---|
+| **Multi-Agent System (ADK)** | Orchestrator + 3 specialist `LlmAgent` instances wired via `AgentTool` into an ADK 2.0 `Workflow` graph |
+| **MCP Server** | FastMCP stdio server in `mcp_server.py` with filtered `McpToolset` per agent (least privilege) |
+| **Antigravity** | Entire project — architecture, code, debugging, documentation — built using Antigravity (Google DeepMind's agentic coding assistant) |
+| **Security Features** | PII redaction, prompt injection detection, emergency keyword routing, structured JSON audit log — all in a pre-LLM Python node |
+| **Deployability** | Dockerfile + FastAPI production server + A2A SDK + Cloud Logging + `agents-cli-manifest.yaml` for Cloud Run / Agent Runtime |
+| **Agents CLI** | Scaffolded with `agents-cli scaffold create`; configured for `agents-cli deploy agent-runtime` |
+
+---
+
+## Security Design
+
+### PII Scrubbing
+Emails, phone numbers, and SSNs are detected and replaced with redaction tokens before any LLM sees the input. A caregiver mentioning a parent's SSN in context ("needed for this form") cannot accidentally expose it through an LLM response.
+
+### Prompt Injection Guard
+Keywords like `"ignore previous instructions"` or `"override instructions"` are detected and the request is immediately blocked with a warning response.
+
+### Emergency Intercept
+Keywords like `"chest pain"`, `"stroke"`, `"ambulance"` trigger an immediate 911 guidance response — no LLM call, no delay. In a real emergency, milliseconds matter.
+
+### Structured JSON Audit Log
+Every message produces a timestamped, severity-tagged JSON log for compliance:
+```json
+{
+  "timestamp": "2026-07-06T18:45:00Z",
+  "session_id": "abc123",
+  "pii_scrubbed": true,
+  "injection_detected": false,
+  "emergency_detected": false,
+  "severity": "INFO",
+  "action": "PASS"
+}
+```
+In production these flow to Google Cloud Logging, enabling a tamper-evident audit trail.
+
+### Principle of Least Privilege
+Each sub-agent's `McpToolset` includes only the tools it needs. `medication_agent` cannot call `add_doctor_visit`; `wellness_agent` cannot touch medications. This is enforced at the toolset layer, not through prompting.
+
+---
+
+## MCP Server Design
+
+`app/mcp_server.py` (FastMCP, stdio transport) exposes five tools:
+
+| Tool | Description |
+|---|---|
+| `get_daily_routines` | Retrieve daily activity schedule |
+| `update_medication_schedule` | Add or update medication records |
+| `log_wellness_entry` | Log mood, pain level, sleep hours, symptoms |
+| `get_doctor_visits` | Retrieve upcoming appointments |
+| `add_doctor_visit` | Schedule a new medical appointment |
+
+Tools are isolated per sub-agent via `tool_filter`, ensuring the data layer enforces domain separation independently of the LLM instructions.
+
+---
+
+## Human-in-the-Loop (HITL)
+
+The `hitl_approval` node uses ADK's `RequestInput` to pause the entire workflow when `[APPROVAL_REQUIRED]` appears in the orchestrator's output:
+
+```
+orchestrator_agent → "[APPROVAL_REQUIRED] Add Vitamin D3 2000IU..."
+    ↓
+hitl_approval fires RequestInput → workflow PAUSES
+    ↓
+Caregiver prompted: "⚠️ Caregiver approval required. Approve? (yes/no)"
+    ↓
+Caregiver types "yes" → ctx.resume_inputs["caregiver_approved"]
+    ↓
+Workflow RESUMES → final_output delivers confirmation
+```
+
+HITL-triggering actions: adding/changing medications, scheduling doctor visits.
+HITL-exempt actions: wellness logging, reading routines, querying appointments.
+
+---
+
+## Demo Walkthrough
+
+1. **Add Medication** — _"Add Vitamin D3 2000 IU once daily"_ → medication_agent → HITL pause → caregiver approves → committed
+2. **Schedule Doctor Visit** — _"Schedule Dr. Adams next Monday 2 PM"_ → routine_agent → HITL pause → caregiver approves → scheduled
+3. **Log Wellness** — _"Slept 7 hours, low pain today"_ → wellness_agent → immediate, no HITL
+4. **PII Redaction** — _"My dad's number is 555-867-5309..."_ → phone redacted → proceeds safely
+5. **Emergency Detection** — _"My father is having chest pain!"_ → immediate 911 alert, no LLM
+
+---
+
+## Impact & Value
+
+**For elderly individuals:** reliable care coordination, privacy protection, immediate emergency escalation.
+
+**For family caregivers:** reduced cognitive burden; interrupted only for decisions that genuinely require human judgment.
+
+**For care agencies:** a structured, auditable care log that could satisfy regulatory requirements.
+
+The global population over 65 will double by 2050. Caregiver burnout is at crisis levels. AI agents that shoulder coordination overhead — while keeping humans in control of decisions that matter — represent a genuine step forward in elder care quality. ElderCare Assistant is not a chatbot. It is a trusted care coordinator that acts as a concierge for families navigating one of life's most demanding challenges.
+
 
 ---
 
