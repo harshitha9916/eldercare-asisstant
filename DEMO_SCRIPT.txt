@@ -4,107 +4,142 @@
  Target length: 4:30–5:00 minutes
 ==========================================
 
-[0:00 — HOOK — 20 seconds]
-(Show a quiet family dinner table. Then cut to text on screen: "1.3 million medication errors per year. 53 million unpaid caregivers. One missed dose can mean a hospitalization.")
+[0:00 — PROBLEM STATEMENT — 20 seconds]
+(Show text on screen: "1.3 million medication errors per year. 53 million unpaid caregivers. One missed dose can mean a hospitalization.")
 
 NARRATION:
-"Caring for an aging parent is one of the most important — and most stressful — things a person can do. Medication schedules, doctor appointments, wellness logs, daily routines. One missed detail, one miscommunication, can mean a visit to the emergency room.
+"Caring for an aging parent is one of the most important — and most stressful — things a person can do.
+Medication schedules, doctor appointments, wellness logs, daily routines.
+One missed detail, one miscommunication, can mean a visit to the emergency room.
 
 I built ElderCare Assistant to fix that."
 
 ---
 
-[0:25 — WHAT IT IS — 25 seconds]
+[0:20 — WHY AGENTS? — 30 seconds]
 (Show cover_page_banner.png fullscreen)
 
 NARRATION:
-"ElderCare Assistant is a multi-agent AI system built with the Google Agent Development Kit. It acts as an intelligent concierge coordinator — managing medication schedules, daily routines, wellness tracking, and doctor visits using natural language.
+"You might ask — why not just build an app?
 
-But here is the critical part: it never acts alone on medical decisions. Every critical change requires explicit caregiver approval before it is committed."
+A traditional app forces a caregiver to navigate menus and fill forms. It can't understand 'my dad seems off today.' It can't route a medication question to the right specialist automatically. And critically — it can't know when to stop and ask for human approval.
+
+Agents are different. They understand natural language, they coordinate intelligently across multiple domains, they act autonomously on safe tasks — and they pause on dangerous ones.
+
+ElderCare Assistant is built on Google ADK 2.0. It uses four AI agents that work together as a team — but a human caregiver stays in control of every critical decision."
 
 ---
 
-[0:50 — ARCHITECTURE — 60 seconds]
-(Show architecture_diagram.png. Animate or highlight each section as you describe it.)
+[0:50 — ARCHITECTURE — 55 seconds]
+(Show architecture_diagram.png. Point to each section as you describe it.)
 
 NARRATION:
-"Let me show you how it's built.
+"Here is how it's built.
 
-Every message first hits a Security Checkpoint — implemented in pure Python, not an LLM. This means it is completely deterministic. It scrubs personal information like phone numbers and Social Security numbers, detects prompt injection attacks, and routes medical emergencies directly to a 911 alert — in milliseconds, with no LLM call.
+Every message first hits a Security Checkpoint — implemented in pure Python, not an LLM. It scrubs personal information like phone numbers and Social Security numbers, detects prompt injection attacks, and routes medical emergencies directly to a 911 alert — in milliseconds, with no LLM call ever made.
 
-Clean messages flow to the Orchestrator Agent — the conversational core that talks to the user and decides which specialist to call.
+Clean messages reach the Orchestrator Agent — the conversational core that understands the request and delegates to the right specialist.
 
 Three specialist sub-agents handle the work: the Routine Agent for daily schedules and doctor visits, the Medication Agent for prescriptions, and the Wellness Agent for mood, pain, and sleep logging.
 
-Each specialist talks to a local MCP server — Model Context Protocol — which exposes five dedicated tools. Critically, each agent only gets access to the tools it needs. The medication agent cannot schedule doctor visits. The wellness agent cannot touch medications. This principle of least privilege is enforced at the toolset level.
+Each specialist talks to a local MCP server — five dedicated tools, and each agent only accesses the tools it needs. The medication agent cannot schedule doctor visits. The wellness agent cannot touch medications.
 
-Before any critical change is committed, the workflow pauses at the Human-in-the-Loop approval node. The caregiver must explicitly type 'yes' to proceed. There is no way for the AI to approve its own actions."
+Before any critical change is committed, the workflow pauses at the Human-in-the-Loop approval node. The caregiver must explicitly say yes. There is no way for the AI to approve its own actions."
 
 ---
 
-[1:55 — LIVE DEMO — 90 seconds]
+[1:45 — LIVE DEMO — 90 seconds]
 (Screen recording of ADK playground at localhost:18081. Use large font, clean browser window.)
 
 NARRATION:
 "Let me show this working in real time.
 
-First — adding a medication. I type: 'Please add a new medication: Vitamin D3, 2000 IU, once daily in the morning.'
+First — adding a medication. I type:
+'Please add a new medication: Vitamin D3, 2000 IU, once daily in the morning.'
 
-Watch what happens. The security checkpoint processes the text instantly. The orchestrator recognizes this as a medication request and delegates to the Medication Agent, which calls the MCP update_medication_schedule tool.
+The security checkpoint processes the text instantly. The orchestrator delegates to the Medication Agent, which calls the MCP update_medication_schedule tool.
 
-And then — the system stops. It shows: 'A caregiver approval is required. Do you approve? yes or no?'
+And then — the system stops. It shows: 'Caregiver approval is required. Do you approve? yes or no?'
 
-This is the Human-in-the-Loop interrupt. The entire workflow is paused at the OS level. No LLM can bypass this. I type 'yes' — and now the medication is committed.
+This is the Human-in-the-Loop interrupt. The entire workflow is paused at the OS level. No LLM can bypass this. I type 'yes' — and the medication is committed.
 
-Now let me show scheduling a doctor visit. 'Schedule a doctor visit with Dr. Adams next Monday at 2 PM.' — Same flow. Routed to the Routine Agent, calls add_doctor_visit, triggers the HITL pause, caregiver approves.
+Now scheduling a doctor visit: 'Schedule a doctor visit with Dr. Adams next Monday at 2 PM.' Same flow. Routed to the Routine Agent, triggers the HITL pause, caregiver approves.
 
-Now contrast that with a wellness log: 'Log that I slept 7 hours and had low pain today.' — This routes to the Wellness Agent, runs instantly, no interruption needed. Fast and frictionless for routine updates.
-
----
-
-[3:25 — SECURITY DEMO — 35 seconds]
-(Stay on playground, type the PII and emergency examples)
-
-NARRATION:
-"Now the security features. I send a message containing a phone number: 'My father's number is 555-867-5309 — log that he slept 8 hours.' Watch the audit log — it shows pii_scrubbed: true. The phone number never reached the LLM.
-
-And if I type a medical emergency: 'My father is having chest pain!' — No LLM is called at all. The system immediately responds with the 911 alert. This is a hard-coded safety net that fires in milliseconds."
+Now contrast that with a wellness log: 'Log that I slept 7 hours and had low pain today.' This runs instantly — no interruption. Fast and frictionless for safe, routine updates."
 
 ---
 
-[4:00 — TECH STACK & BUILD — 30 seconds]
-(Show GitHub repo briefly)
+[3:15 — SECURITY DEMO — 35 seconds]
+(Stay on playground, type the PII and emergency examples. Keep terminal visible so audit log JSON is visible.)
 
 NARRATION:
-"The full system is built on Google ADK 2.0, FastMCP, FastAPI, and the Agents CLI. The project was scaffolded end-to-end using Antigravity — Google DeepMind's agentic coding assistant — which helped design the architecture, implement the workflow graph, debug MCP stream issues, and write the documentation.
+"Now the security features in action.
 
-It's containerized with Docker and pre-configured for deployment to Google Cloud Run via the agents-cli deploy command. The GitHub repository includes full setup instructions — clone, add your API key, and run make playground."
+I send: 'My father's number is 555-867-5309 — log that he slept 8 hours.'
+Watch the terminal — it shows pii_scrubbed: true. The phone number never reached the LLM.
+
+And if I type: 'My father is having chest pain!' — no LLM is called at all. The system immediately responds with the 911 alert. This is a hard-coded safety net that fires in milliseconds. In a real emergency, that speed matters."
 
 ---
 
-[4:30 — CLOSE — 25 seconds]
-(Return to cover page or a calm final slide with project name)
+[3:50 — THE BUILD — 35 seconds]
+(Show GitHub repo briefly, then return to architecture diagram.)
 
 NARRATION:
-"By 2050, the global population over 65 will double. Caregiver burnout is already at crisis levels. ElderCare Assistant demonstrates how AI agents can shoulder the coordination burden — while keeping humans firmly in control of the decisions that matter most.
+"The full system is built on Google ADK 2.0, FastMCP, FastAPI, and the Agents CLI.
 
-This is what Concierge Agents look like in practice: not a chatbot, but a trusted care coordinator that works for your family, every day.
+The project was scaffolded end-to-end using Antigravity — Google DeepMind's agentic coding assistant — which helped design the workflow graph, implement the security checkpoint, debug a subtle MCP stdio stream issue on Windows, and write the documentation.
+
+It's containerized with Docker and pre-configured for deployment to Google Cloud Run via the agents-cli deploy command. The entire codebase has 19 passing unit tests — covering every security rule — no API key needed to run them."
+
+---
+
+[4:25 — CLOSE — 30 seconds]
+(Return to cover page or a calm final slide with the project name.)
+
+NARRATION:
+"By 2050, the global population over 65 will double. Caregiver burnout is already at crisis levels.
+
+ElderCare Assistant demonstrates what responsible AI agents look like in a high-stakes, real-world domain: they understand natural language, coordinate intelligently, and act autonomously — but they keep humans firmly in control of the decisions that matter most.
+
+This is what Concierge Agents look like in practice.
+Not a chatbot. A trusted care coordinator. For your family.
 
 Thank you."
 
 ==========================================
- RECORDING TIPS
+ RECORDING CHECKLIST
 ==========================================
-- Record at 1080p minimum
-- Use a browser zoom of 110-125% for readability
-- Run `make playground` BEFORE starting recording
-- Pre-type test queries to avoid live typos
-- Keep terminal visible in a split view during security demo
-- Total target: under 5 minutes
-- Upload to YouTube as Unlisted or Public, copy URL for Kaggle submission
+□ Problem Statement covered?     [0:00] YES
+□ Why Agents? covered?           [0:20] YES
+□ Architecture covered?          [0:50] YES
+□ Live Demo covered?             [1:45] YES — all 5 scenarios
+□ The Build covered?             [3:50] YES
+
+□ Run `make playground` BEFORE recording
+□ Browser zoom at 110-125%
+□ Terminal visible (for audit log JSON)
+□ Pre-type all 5 queries in Notepad to copy-paste
+□ Total time target: under 5 minutes
+□ Upload to YouTube (Public or Unlisted)
+□ Copy YouTube URL for Kaggle submission
 ==========================================
 
+==========================================
+ 5 DEMO QUERIES (copy-paste these)
+==========================================
+1. Please add a new medication: Vitamin D3, 2000 IU, once daily in the morning.
+   → HITL pause → type: yes
 
-[0:20 — WHAT IT IS]
-ElderCare Assistant acts as an intelligent, personalized concierge companion. Built with the Google Agent Development Kit, it actively manages medication schedules, organizes routines, and handles medical visit logs under the Concierge Agents track.
+2. Schedule a doctor visit with Dr. Adams next Monday at 2:00 PM.
+   → HITL pause → type: yes
 
+3. Log that I slept 7 hours and had low pain today. My mood was cheerful.
+   → Instant, no approval needed
+
+4. My father's number is 555-867-5309. Log that he slept 8 hours.
+   → Logged, phone redacted (watch terminal: pii_scrubbed: true)
+
+5. My father is having chest pain!
+   → Instant 911 alert, no LLM called at all
+==========================================
